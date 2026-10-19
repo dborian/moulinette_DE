@@ -12,6 +12,10 @@ int error_handler(int error)
         printf("malloc error\n");
         return (2);
     }
+    else if (error == 3)
+    {
+        printf("a files is missing go fuck yourself\n");
+    }
     return (0);
 }
 
@@ -103,13 +107,71 @@ void ft_print_help()
     printf("Utilisation : moulinette [OPTION]... [FICHIER]...\nCorriger la piscine 42 pour un usage a la maison.\n\n-c, --correction  demander une correction du day actuelle depuis la racine du dossier, si la moulinette ne trouve pas le probleme est humain\n");
 }
 
+char *ft_get_day(int *error)
+{
+    char *pwd;
+    char *day;
+    int i;
+    int j;
+
+    pwd = getenv("PWD");
+    j = ft_strlen(pwd);
+    while(pwd[j] != '/')
+        j--;
+    i = ft_strlen(pwd);
+    i = i - j++;
+    day = malloc(sizeof(char) * i + 1);
+    if (!day)
+    {
+        *error = 2;
+        return (NULL);
+    }
+    i = 0;
+    while (pwd[j])
+        day[i++] = pwd[j++];
+    day[i] = 0;
+    return (day);
+}
+
+void    ft_correct_shell00(int *error)
+{
+    printf("test\n");
+    (void)error;
+}
+
+int ft_correct(cmd cmd, int *error)
+{
+    (void)cmd;
+    char *actual_day;
+
+    actual_day = ft_get_day(error);
+    if (*error != 0)
+        return (error_handler(*error));
+    if (ft_egal(actual_day, "shell00") == 0)
+    {
+        ft_correct_shell00(error);
+        if (*error != 0)
+        {
+            return *error;
+        }
+    }
+    free(actual_day);
+    return (0);
+}
+
 int option_choose(cmd cmd, int *error)
 {
     *error = 0;
     if (ft_egal(cmd.cmd[0], "--help") == 0)
         ft_print_help();
     else if (ft_egal(cmd.cmd[0], "-c") == 0 || ft_egal(cmd.cmd[0], "--correction") == 0)
-        printf("correction\n");
+    {
+        ft_correct(cmd, error);
+        if (*error != 0)
+        {
+            return (*error);
+        }
+    }
     else
         printf ("ca existe pas ca comme option\n");
     return (0);
@@ -126,5 +188,9 @@ int main(int argc, char **argv)
         return (error_handler(cmd.error));
     if (option_choose(cmd, &cmd.error) != 0)
         return (error_handler(cmd.error));
+    free(cmd.cmd[0]);
+    if (argc == 3)
+        free(cmd.cmd[1]);
+    free(cmd.cmd);
     return (0);
 }
