@@ -4,17 +4,27 @@ int error_handler(int error)
 {
     if (error == 1)
     {
-        printf("moulinette: error wrong argument\nSaisissez « moulinette --help » pour plus d'informations.\n");
+        fprintf(stderr, "moulinette: error wrong argument\nSaisissez « moulinette --help » pour plus d'informations.\n");
         return (1);
     }
     else if (error == 2)
     {
-        printf("malloc error\n");
+        fprintf(stderr, "malloc error, skill issue\n");
         return (2);
     }
     else if (error == 3)
     {
-        printf("a files is missing go fuck yourself\n");
+        fprintf(stderr, "a files is missing go fuck yourself\n");
+    }
+    else if (error == 4)
+    {
+        fprintf(stderr, "lseek error, skill issue\n");
+        return (4);
+    }
+    else if (error == 5)
+    {
+        fprintf(stderr, "read error, skill issue\n");
+        return (4);
     }
     return (0);
 }
@@ -132,11 +142,67 @@ char *ft_get_day(int *error)
     day[i] = 0;
     return (day);
 }
+char    *ft_parse_ex00(int *error)
+{
+    int     fd;
+    int     size;	
+    char    *buf;
+	int     total;
+    int     r;
+
+    fd = open("ex00/z", O_RDONLY);
+    if (fd == -1)
+    {
+        *error = 3;
+        return NULL;
+    }
+    size = lseek(fd, 0, SEEK_END);
+	if (size == -1 || lseek(fd, 0, SEEK_SET) == -1)
+	{
+		close(fd);
+		*error = 4;
+        return NULL;
+	}
+    buf = malloc(size + 1);
+	if (!buf)
+	{
+		close(fd);
+        *error = 2;
+		return NULL;
+	}
+	total = 0;
+	while (total < size)
+	{
+		r = read(fd, buf + total, size - total);
+		if (r == -1)
+		{
+			free(buf);
+			close(fd);
+            *error = 5;
+			return NULL;
+		}
+		if (r == 0)
+			break ;
+		total += r;
+	}
+    close(fd);
+	buf[total] = '\0';
+    return (buf);
+}
 
 void    ft_correct_shell00(int *error)
 {
-    printf("test\n");
-    (void)error;
+    shell00 shell00;
+    shell00.ex00 = ft_parse_ex00(error);
+    if (*error != 0)
+    {
+        if (!shell00.ex00)
+            free(shell00.ex00);
+        return ;
+    }
+    if (shell00.ex00[0] == 'z' && shell00.ex00[1] == '\n')
+        printf("ex00 ✅\n");
+    free (shell00.ex00);
 }
 
 int ft_correct(cmd cmd, int *error)
@@ -152,6 +218,7 @@ int ft_correct(cmd cmd, int *error)
         ft_correct_shell00(error);
         if (*error != 0)
         {
+            free(actual_day);
             return *error;
         }
     }
@@ -187,10 +254,18 @@ int main(int argc, char **argv)
     if (cmd.error != 0)
         return (error_handler(cmd.error));
     if (option_choose(cmd, &cmd.error) != 0)
+    {
+        free(cmd.cmd[0]);
+        if (argc == 3)
+            free(cmd.cmd[1]);
+        free(cmd.cmd);
         return (error_handler(cmd.error));
+    }
     free(cmd.cmd[0]);
     if (argc == 3)
         free(cmd.cmd[1]);
     free(cmd.cmd);
     return (0);
 }
+
+// fprintf(stderr, "Your error message here: %s\n", dynamic_string);
